@@ -1,3 +1,4 @@
+import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
 import 'package:flutter/material.dart';
 import 'package:video_app/constants.dart';
 import 'package:video_player/video_player.dart';
@@ -75,6 +76,25 @@ class _MyHomePageState extends State<MyHomePage> {
         ),
       ),
     );
+  }
+
+  Future<void> combineVideoAndImage(
+      String videoPath, String imagePath, String outputVideoPath) async {
+    await FFmpegKit.execute("-i $videoPath -vf fps=30 frame%04d.png");
+
+    for (int i = 1; i <= 30; i++) {
+      final String inputFramePath = 'frame${i.toString().padLeft(4, '0')}.png';
+      await FFmpegKit.execute(
+          "-i $inputFramePath -i $imagePath -filter_complex overlay=0:0 $outputVideoPath");
+    }
+
+    await FFmpegKit.execute(
+        "-framerate 30 -i frame%04d.png -c:v libx264 -pix_fmt yuv420p $outputVideoPath");
+
+    for (int i = 1; i <= 30; i++) {
+      final String inputFramePath = 'frame${i.toString().padLeft(4, '0')}.png';
+      await FFmpegKit.execute("rm $inputFramePath");
+    }
   }
 }
 
